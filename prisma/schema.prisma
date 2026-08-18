@@ -8,9 +8,44 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String         @id @default(uuid())
+  email        String         @unique
+  password     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  roles UserRole[]
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // e.g., "ADMIN", "USER"
+  users       UserRole[]
+  permissions Permission[]
+}
+
+model Permission {
+  id          String       @id @default(uuid())
+  name        String       @unique // e.g., "DELETE_USERS", "READ_USERS"
+  roles       Role[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  hashedToken String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId    String   // Used to group tokens generated from the same login chain
+  isRevoked   Boolean  @default(false)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
 }
