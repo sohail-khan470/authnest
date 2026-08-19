@@ -25,14 +25,25 @@ export class UsersService {
     });
   }
 
-  async createUser(
-    email: string,
-    hashedPassword: string,
-  ): Promise<User | null> {
+  async createUser(email: string, hashedPassword: string, roleId: string) {
     return this.prisma.user.create({
       data: {
         email,
         password: hashedPassword,
+        roles: {
+          create: [{ roleId }],
+        },
+      },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -41,6 +52,17 @@ export class UsersService {
     return this.prisma.user.findFirst({
       where: {
         id: userId,
+      },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: true,
+              },
+            },
+          },
+        },
       },
     });
   }

@@ -31,8 +31,21 @@ export class AuthService {
       throw new ConflictException('Email already in use');
     }
     //hash password
+    const userRole = await this.prisma.role.findUnique({
+      where: {
+        name: 'USER',
+      },
+    });
+    if (!userRole) {
+      throw new InternalServerErrorException('user role not found');
+    }
     const hashedPassword = await argon2.hash(dto.password);
-    const user = await this.usersService.createUser(dto.email, hashedPassword);
+
+    const user = await this.usersService.createUser(
+      dto.email,
+      hashedPassword,
+      userRole?.id,
+    );
     const newFamilyId = crypto.randomUUID();
 
     if (!user) {
@@ -40,7 +53,14 @@ export class AuthService {
     }
     const { password, ...result } = user;
 
-    return await this.generateTokens(user?.id, user?.email, newFamilyId);
+    const userRoles = user.roles.map((user) => user.role.name);
+
+    return await this.generateTokens(
+      user?.id,
+      user?.email,
+      userRoles,
+      newFamilyId,
+    );
   }
 
   async login(dto: LoginDto) {
@@ -50,14 +70,14 @@ export class AuthService {
     const isPasswordValid = await argon2.verify(user.password, dto.password);
     if (!isPasswordValid)
       throw new UnauthorizedException('Invalid credentials');
-
-    return this.generateTokens(user.id, user.email);
+    const userRoles = user.roles.map((user) => user.role.name);
+    return this.generateTokens(user.id, user.email, userRoles);
   }
 
   private async generateTokens(
     userId: string,
     email: string,
-    roles: Role[],
+    roles: string[],
     familyId?: string,
   ) {
     const accessToken = await this.jwtService.signAsync(
@@ -110,7 +130,12 @@ export class AuthService {
       where: { id: storedToken.id },
       data: { isRevoked: true },
     });
-
-    return this.generateTokens(user.id, user.email, storedToken.familyId);
+    const userRoles = user.roles.map((user) => user.role.name);
+    return this.generateTokens(
+      user.id,
+      user.email,
+      userRoles,
+      storedToken.familyId,
+    );
   }
 }
