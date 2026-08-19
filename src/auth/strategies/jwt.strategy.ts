@@ -21,6 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   // Passport automatically verifies the JWT signature. If valid, it passes the decoded payload here.
   async validate(payload: JwtPayload) {
     // We attach the decoded payload to request.user, which RolesGuard will read
+    console.log('SSSSSS');
     return {
       id: payload.sub,
       email: payload.email,

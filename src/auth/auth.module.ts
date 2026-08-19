@@ -16,6 +16,7 @@ import { ConfigModule } from '@nestjs/config';
     UsersModule,
     PrismaModule,
     ConfigModule,
+    PassportModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET || 'SUPER_SECRET_DEV_KEY', // Use env vars in production!
@@ -23,13 +24,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-  ],
+  providers: [AuthService, JwtStrategy],
 })
 export class AuthModule {}
